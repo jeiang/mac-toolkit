@@ -1,0 +1,13 @@
+.{
+    .name = .mac_toolkit,
+    .version = "0.1.0",
+    .fingerprint = 0x0bc8f90c5dc2740b,
+    .minimum_zig_version = "0.17.1",
+    .dependencies = .{
+        .nanoui = .{
+            .url = "git+https://github.com/justrach/nanoui#07d7a34284aeab78ae4ea958a128ca3573bf2673",
+            .hash = "nanoui-0.14.11-we0KMcxiYwBYh94epKTo_4X4oqPYLnPfH9pnrz-70NPL",
+        },
+    },
+    .paths = .{ "build.zig", "build.zig.zon", "src", "macos", "tools", "LICENSE" },
+}
