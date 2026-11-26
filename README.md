@@ -38,6 +38,9 @@ menu says so. Keep Awake and Keep Media Loud need no permissions.
 
 ## Limits
 
+- Natural Scrolling assumes System Settings keeps **Natural Scrolling** on for
+  the trackpad: it turns the wheel around. With the setting off, a wheel
+  already arrives classic and would come out natural.
 - A mouse that scrolls smoothly (Apple's Magic Mouse, Logitech's with Logi
   Options) sends pixel-based events, the same as a trackpad, so it keeps the
   trackpad's direction. A wheel mouse's line-based events are what this

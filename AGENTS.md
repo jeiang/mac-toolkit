@@ -58,13 +58,21 @@ none), 16 bytes, settable, all zeros while idle.
 
 ### The event tap
 
-`scroll.zig` taps `kCGHIDEventTap` and reverses only events whose
-`kCGScrollWheelEventIsContinuous` is zero: a wheel's line-based events, never a
-trackpad's pixel-based ones. macOS recomputes the pixel and fixed-point deltas
+`scroll.zig` taps `kCGSessionEventTap` with `kCGTailAppendEventTap` and
+reverses only events whose `kCGScrollWheelEventIsContinuous` is zero: a wheel's
+line-based events, never a trackpad's pixel-based ones. The session tap is the
+level Scroll Reverser uses, and the one where the deltas are what apps will
+read: macOS has applied the direction System Settings chose by then, and no
+directional stage follows. macOS recomputes the pixel and fixed-point deltas
 from the line delta whenever it is set, so all three are written after it, each
-reversed from the value the event arrived with (Scroll Reverser's order). The
-HID event under the CGEvent is reversed too, because Chromium scrolls from it;
-`CGEventCopyIOHIDEvent` is a Core Graphics SPI.
+reversed from the value the event arrived with. The HID event under the CGEvent
+is reversed too, because Chromium scrolls from it; `CGEventCopyIOHIDEvent` is a
+Core Graphics SPI.
+
+The reversal assumes System Settings keeps Natural Scrolling on: with it off,
+a wheel already arrives classic. Scroll Reverser checks
+`NSEvent.isDirectionInvertedFromDevice`, which is an AppKit property and not a
+`CGEventField`; this does not.
 
 The tap needs the Accessibility permission. Without it `CGEventTapCreate`
 returns null, and the menu's tooltip says so; nothing is left reversed because

@@ -4,6 +4,10 @@
 //! reverse the wheel and leave the trackpad with the direction System Settings
 //! chose.
 //!
+//! The tap turns every wheel event around, so it assumes System Settings keeps
+//! Natural Scrolling on for the trackpad: with it off the wheel arrives
+//! already classic, and turning it around would make the mouse natural.
+//!
 //! A tap that changes events needs the Accessibility permission; without it
 //! `CGEventTapCreate` returns null and no event is ever seen, so nothing is
 //! left reversed. A mouse that scrolls smoothly, as Apple's and Logitech's do,
@@ -17,11 +21,15 @@ const event_scroll_wheel: u32 = 22;
 const event_disabled_by_timeout: u32 = 0xffff_fffe;
 const event_disabled_by_user_input: u32 = 0xffff_ffff;
 
-/// `kCGHIDEventTap`: the wheel reaches the tap before the window server or any
-/// app sees it. `kCGHeadInsertEventTap`, and `kCGEventTapOptionDefault`, which
-/// changes the events the tap is given.
-const location_hid: u32 = 0;
-const placement_head: u32 = 0;
+/// `kCGSessionEventTap`: the wheel reaches the tap after macOS has applied the
+/// direction System Settings chose and before any app reads it, so what the tap
+/// negates is what apps scroll by. (`kCGHIDEventTap` is earlier, with the
+/// system's own directional stage after it, where a reversal composes with
+/// something the tap cannot see.) `kCGTailAppendEventTap` adds it behind the
+/// taps already installed, and `kCGEventTapOptionDefault` lets it change the
+/// events it is given.
+const location_session: u32 = 1;
+const placement_tail: u32 = 1;
 const option_default: u32 = 0;
 
 /// `CGEventField` numbers, as CoreGraphics's CGEventTypes.h declares them. The
@@ -147,8 +155,8 @@ pub const Reverser = struct {
     pub fn start(reverser: *Reverser) bool {
         assert(reverser.tap == null);
         const tap = core_graphics.CGEventTapCreate(
-            location_hid,
-            placement_head,
+            location_session,
+            placement_tail,
             option_default,
             @as(u64, 1) << @intCast(event_scroll_wheel),
             callback,
