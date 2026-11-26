@@ -1,7 +1,7 @@
 //! The one menu bar icon and its menu: three small utilities behind one icon.
 //! Keep Awake runs `/usr/bin/caffeinate` with the flags and duration chosen in
-//! its submenu; Keep Media Loud clears the attenuation a call adds to the
-//! output device; Natural Scrolling reverses a mouse wheel and leaves the
+//! its submenu; Keep Media Loud exempts the output device from the ducking a
+//! call asks for; Natural Scrolling reverses a mouse wheel and leaves the
 //! trackpad with the direction System Settings chose.
 //!
 //! One timer passes over all three: it reaps a caffeinate that ended on its
@@ -45,6 +45,7 @@ pub const Menu = struct {
     settings: caffeinate.Settings = .{},
     /// Keep Media Loud, on until turned off.
     ducking: bool = true,
+    guard: duck.Guard = .{},
     reverser: scroll.Reverser = .{},
     media: Media = .loud,
     /// caffeinate would not start, until it starts or is turned off.
@@ -110,11 +111,13 @@ pub const Menu = struct {
         if (menu.reverser.enabled and !menu.reverser.running()) scroll.prompt();
     }
 
-    /// Ends what the menu started: the tick, caffeinate, and the tap.
+    /// Ends what the menu started: the tick, caffeinate, the tap, and the
+    /// exemption, which would outlive all three.
     pub fn stop(menu: *Menu) void {
         menu.tick.stop();
         if (menu.keeper.running()) menu.keeper.stop();
         if (menu.reverser.running()) menu.reverser.stop();
+        menu.guard.release();
     }
 
     /// One pass: reap caffeinate if it ended on its own, hold the media loud,
@@ -122,7 +125,10 @@ pub const Menu = struct {
     /// while something still needs it.
     fn apply(menu: *Menu) void {
         if (menu.keeper.reap()) menu.show_awake();
-        menu.media = if (!menu.ducking) .ducks else switch (duck.hold()) {
+        menu.media = if (!menu.ducking) blk: {
+            menu.guard.release();
+            break :blk .ducks;
+        } else switch (menu.guard.hold()) {
             .held => .loud,
             .no_device => .no_device,
             .no_property => .no_property,
@@ -213,8 +219,8 @@ pub const Menu = struct {
             .loud => "loud",
             .ducks => "ducks",
             .no_device => "no output device",
-            .no_property => "no duck property",
-            .read_only => "write refused",
+            .no_property => "no duck exemption",
+            .read_only => "exemption refused",
             .failed => "write failed",
         };
         const pointer: []const u8 = if (!menu.reverser.enabled)

@@ -16,10 +16,12 @@ The icon's menu has:
   always gets `-w <pid>`, so it ends with the app. The flags and the duration
   are kept between launches; caffeinate starts only from the menu.
 - **Keep Media Loud**: holds media at the volume you set while macOS ducks it
-  for a call. When a call starts, macOS writes an attenuation into the default
-  output device's private `duck` property, and every other app's media drops to
-  a whisper; this writes back the value macOS leaves when nothing is ducking,
-  every 500 ms, until the call ends.
+  for a call. Every output device carries an undocumented `'nodk'` property
+  that exempts it from Call Guard's ducking; this sets it on the default output
+  device, and once per device ramps the level back up with
+  `AudioDeviceDuck(device, 1.0, nil, 0.5)` in case the call ducked before the
+  exemption was on. The exemption is device state, so it is cleared when the
+  switch goes off and when the app quits.
 - **Natural Scrolling**: a mouse wheel scrolls the classic way while the
   trackpad keeps macOS's natural direction, at the same time. It is an event
   tap that reverses discrete wheel events and leaves the trackpad's continuous
@@ -45,9 +47,11 @@ menu says so. Keep Awake and Keep Media Loud need no permissions.
   Options) sends pixel-based events, the same as a trackpad, so it keeps the
   trackpad's direction. A wheel mouse's line-based events are what this
   reverses.
-- The duck property is private and undocumented. It reads all zeros while
-  nothing is ducking on macOS 27; writing `1.0` into its first Float32, as if
-  that were a gain, silences every app instead of holding it loud.
+- `'nodk'` and `AudioDeviceDuck` are both undocumented. Writing the `duck`
+  property itself, as other un-ducking tools do, silences every app on macOS 27
+  whatever is written into it; this does not write that property at all.
+- A crash leaves the exemption on the device. Turning the switch off, quitting,
+  or the next launch with the setting off clears it.
 - macOS 14.2 or newer, as the duck property is. No microphone access, no
   kernel extension, no virtual audio device.
 

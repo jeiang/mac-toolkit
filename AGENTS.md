@@ -47,14 +47,19 @@ duck write, and starts the event tap once macOS allows it. Nothing runs during
 it that could block, and nothing is written off the main thread, so the Core
 Audio calls, the tap and the tray never race.
 
-### The duck property
+### The duck exemption
 
-`duck.zig` writes 16 zero bytes to the output scope of the default output
-device's `duck` property, which is what the property reads when nothing is
-ducking. The first Float32 is the attenuation macOS adds, not a gain it
-multiplies by: writing `1.0` into it silences every app, call or no call. A
-probe on macOS 27 found the property on the output scope only (`glob` has
-none), 16 bytes, settable, all zeros while idle.
+`duck.zig` sets `'nodk'` to 1 on the output scope of the default output
+device: one UInt32, which exempts the device from Call Guard's ducking. Once
+per device it also calls `AudioDeviceDuck(device, 1.0, nil, 0.5)`, Chromium's
+`UndoDucking`, to undo a duck that landed before the exemption (calling it
+repeatedly ticks audibly).
+
+Do not write the `duck` property. It is 16 bytes on the output scope and reads
+all zeros, but on macOS 27 writing it — `[1,0,0,0]` as other un-ducking tools
+do, or sixteen zeros — silences every app for as long as the writer lives.
+`'nodk'` writes are device state and outlive the process, so the switch going
+off, the app quitting and a launch with the setting off each clear it.
 
 ### The event tap
 
