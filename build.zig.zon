@@ -1,6 +1,6 @@
 .{
     .name = .mac_toolkit,
-    .version = "0.1.0",
+    .version = "0.1.1",
     .fingerprint = 0x0bc8f90c5dc2740b,
     .minimum_zig_version = "0.17.1",
     .dependencies = .{
