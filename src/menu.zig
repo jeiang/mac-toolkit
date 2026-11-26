@@ -105,6 +105,9 @@ pub const Menu = struct {
         };
         menu.tray = try menu.app.newTray(.{ .symbol = symbol, .menu = &items });
         menu.apply();
+        // Only macOS can ask for the tap's grant, and one dialog a launch is
+        // enough: a switch that is on with nothing behind it is worse.
+        if (menu.reverser.enabled and !menu.reverser.running()) scroll.prompt();
     }
 
     /// Ends what the menu started: the tick, caffeinate, and the tap.
