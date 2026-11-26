@@ -36,7 +36,7 @@ const tooltip_bytes_max = 128;
 const duration_count = @typeInfo(caffeinate.Duration).@"enum".field_names.len;
 
 /// What the last pass found of macOS's ducking.
-const Media = enum { loud, ducks, no_device, no_property, read_only, failed };
+const Media = enum { loud, ducks, stuck, no_device, no_property, read_only, failed };
 
 pub const Menu = struct {
     app: *nanoui.App,
@@ -117,7 +117,7 @@ pub const Menu = struct {
         menu.tick.stop();
         if (menu.keeper.running()) menu.keeper.stop();
         if (menu.reverser.running()) menu.reverser.stop();
-        menu.guard.release();
+        _ = menu.guard.release();
     }
 
     /// One pass: reap caffeinate if it ended on its own, hold the media loud,
@@ -126,8 +126,7 @@ pub const Menu = struct {
     fn apply(menu: *Menu) void {
         if (menu.keeper.reap()) menu.show_awake();
         menu.media = if (!menu.ducking) blk: {
-            menu.guard.release();
-            break :blk .ducks;
+            break :blk if (menu.guard.release()) |_| Media.stuck else .ducks;
         } else switch (menu.guard.hold()) {
             .held => .loud,
             .no_device => .no_device,
@@ -218,6 +217,7 @@ pub const Menu = struct {
         const media: []const u8 = switch (menu.media) {
             .loud => "loud",
             .ducks => "ducks",
+            .stuck => "exemption stuck",
             .no_device => "no output device",
             .no_property => "no duck exemption",
             .read_only => "exemption refused",

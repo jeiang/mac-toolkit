@@ -59,7 +59,11 @@ Do not write the `duck` property. It is 16 bytes on the output scope and reads
 all zeros, but on macOS 27 writing it — `[1,0,0,0]` as other un-ducking tools
 do, or sixteen zeros — silences every app for as long as the writer lives.
 `'nodk'` writes are device state and outlive the process, so the switch going
-off, the app quitting and a launch with the setting off each clear it.
+off, the app quitting and a launch with the setting off each clear it — every
+pass of a launch that starts with the switch off clears any exemption a crash
+left behind. Clearing it takes effect from macOS's next call: it re-ducks on
+its own schedule and never reveals the level it used, so an unducked call in
+progress stays unducked.
 
 ### The event tap
 

@@ -21,7 +21,9 @@ The icon's menu has:
   device, and once per device ramps the level back up with
   `AudioDeviceDuck(device, 1.0, nil, 0.5)` in case the call ducked before the
   exemption was on. The exemption is device state, so it is cleared when the
-  switch goes off and when the app quits.
+  switch goes off and when the app quits. macOS applies that from its next
+  call: it re-ducks on its own schedule and never reports the level it used, so
+  a call in progress keeps the level it has.
 - **Natural Scrolling**: a mouse wheel scrolls the classic way while the
   trackpad keeps macOS's natural direction, at the same time. It is an event
   tap that reverses discrete wheel events and leaves the trackpad's continuous

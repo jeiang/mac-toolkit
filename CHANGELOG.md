@@ -17,7 +17,8 @@ Changelog](https://keepachangelog.com/en/1.1.0/), and the project follows
 - **Keep Media Loud**: sets the undocumented `'nodk'` exemption on the default
   output device so Call Guard does not duck it, and ramps the level back up
   once per device with `AudioDeviceDuck`, so media stays at the volume it was
-  set to while a call runs.
+  set to while a call runs. Turning it off lets macOS duck again from its next
+  call.
 - **Natural Scrolling**: an event tap that reverses a wheel mouse's discrete
   scroll events and leaves the trackpad's continuous ones with the direction
   System Settings chose.

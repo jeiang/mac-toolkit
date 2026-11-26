@@ -219,13 +219,26 @@ pub const Guard = struct {
         return .held;
     }
 
-    /// Lets the device duck again. Called when the switch goes off and when the
-    /// app quits, because the exemption outlives both.
-    pub fn release(guard: *Guard) void {
-        if (guard.device == Object.unknown) return;
-        _ = write(guard.device, .no_duck(), ducking);
+    /// Lets the device duck again; macOS applies it from its next call, since
+    /// it re-ducks on its own schedule and never says which level it used, so
+    /// a call in progress keeps the level it has. Called when the switch goes
+    /// off, when the app quits, and on every pass of a launch that starts with
+    /// the switch off, because the exemption outlives the process. Returns the
+    /// status of a write that failed.
+    pub fn release(guard: *Guard) ?i32 {
+        const tracked = guard.device;
         guard.device = Object.unknown;
         guard.ramped = false;
+        // A launch that starts with the switch off has no device of its own to
+        // clear, and a crash may have left one exempt.
+        const device = if (tracked != Object.unknown) tracked else default_device() orelse return null;
+        switch (read(device, .no_duck())) {
+            .absent, .read_only => return null,
+            .failed => |status| return status,
+            .value => |value| if (value == ducking) return null,
+        }
+        const status = write(device, .no_duck(), ducking);
+        return if (status == success) null else status;
     }
 };
 
